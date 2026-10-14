@@ -8,8 +8,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="شاه‌پری">
-<meta name="theme-color" content="#f2f2f7" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#f2f2f7">
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icon.png">
 <link rel="icon" href="icon.png">
@@ -18,15 +17,7 @@
   --bg: #f2f2f7; --cell: #fff; --label: #000; --sec: rgba(60,60,67,.6); --ter: rgba(60,60,67,.3);
   --sep: rgba(60,60,67,.29); --fill: rgba(118,118,128,.12); --press: #e5e5ea; --bar: rgba(249,249,249,.82); --seg-on: #fff;
   --accent: #b0479a; --red: #ff3b30; --orange: #ff9500; --blue: #007aff; --pink: #ff2d55; --purple: #af52de;
-  color-scheme: light dark;
-}
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg: #000; --cell: #1c1c1e; --label: #fff; --sec: rgba(235,235,245,.6); --ter: rgba(235,235,245,.3);
-    --sep: rgba(84,84,88,.6); --fill: rgba(118,118,128,.24); --press: #2c2c2e; --bar: rgba(22,22,22,.82); --seg-on: #636366;
-    --accent: #e07bcb; --red: #ff453a; --orange: #ff9f0a; --blue: #0a84ff; --pink: #ff375f; --purple: #bf5af2;
-  }
-  .sheet { --bg: #1c1c1e; --cell: #2c2c2e; --press: #3a3a3c; }
+  color-scheme: light;
 }
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 html { background: var(--bg); }
