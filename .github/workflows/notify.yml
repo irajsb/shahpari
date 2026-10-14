@@ -1,0 +1,52 @@
+# Sends the morning + pill push notifications. The app has no backend: its "کپی تنظیمات اعلان"
+# button produces {tz, sub, schedule} which goes into the SHAHPARI_PUSH repo secret.
+name: notify
+on:
+  schedule:
+    - cron: '7-59/15 * * * *' # off the :00 rush, GitHub delays those the most
+    - cron: '0 0 1 * *'       # keepalive
+  workflow_dispatch:          # manual run = test notification
+
+jobs:
+  push:
+    if: github.event.schedule != '0 0 1 * *'
+    runs-on: ubuntu-latest
+    env:
+      CFG: ${{ secrets.SHAHPARI_PUSH }}
+      VAPID_PRIVATE: ${{ secrets.VAPID_PRIVATE_KEY }}
+      VAPID_PUBLIC: BKfIaLd5y-KtyffIbjNZhhHyGEyyAaNveNG9OvCT_TA497aAGTFJa0WWyHqG_gIf9-1lGnJ5d1OmN97pqfgVYbs
+    steps:
+      - run: |
+          [ -n "$CFG" ] || { echo "SHAHPARI_PUSH secret not set"; exit 0; }
+          export TZ=$(jq -r .tz <<<"$CFG")
+          m=$((10#$(date +%H) * 60 + 10#$(date +%M)))
+          c=$((m - (m + 8) % 15)) # the :07/:22/:37/:52 slot this run belongs to
+          # ponytail: stateless slot, a run GitHub delays >15 min skips its reminders; move to a cron on a real server if that bites
+          if [ "${{ github.event_name }}" = workflow_dispatch ]; then
+            bodies='اعلان آزمایشی 🌸'
+          else
+            bodies=$(jq -r --argjson c "$c" '.schedule[]
+              | select((.t | split(":") | map(tonumber) | .[0] * 60 + .[1]) as $x | (($c - $x) % 1440 + 1440) % 1440 < 15)
+              | .body' <<<"$CFG")
+          fi
+          [ -n "$bodies" ] || exit 0
+          while IFS= read -r body; do
+            npx -y web-push send-notification \
+              --endpoint="$(jq -r .sub.endpoint <<<"$CFG")" \
+              --key="$(jq -r .sub.keys.p256dh <<<"$CFG")" \
+              --auth="$(jq -r .sub.keys.auth <<<"$CFG")" \
+              --payload="$(jq -nc --arg b "$body" '{title: "شاه‌پری", body: $b}')" \
+              --vapid-subject="${{ github.server_url }}/${{ github.repository }}" \
+              --vapid-pubkey="$VAPID_PUBLIC" --vapid-pvtkey="$VAPID_PRIVATE"
+          done <<<"$bodies"
+
+  # GitHub pauses scheduled workflows after 60 days without repo activity; re-enabling resets that.
+  keepalive:
+    if: github.event.schedule == '0 0 1 * *'
+    runs-on: ubuntu-latest
+    permissions:
+      actions: write
+    steps:
+      - run: gh api -X PUT repos/${{ github.repository }}/actions/workflows/notify.yml/enable
+        env:
+          GH_TOKEN: ${{ github.token }}

@@ -1,0 +1,12 @@
+{
+  "name": "شاه‌پری",
+  "short_name": "شاه‌پری",
+  "lang": "fa",
+  "dir": "rtl",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f2f2f7",
+  "theme_color": "#f2f2f7",
+  "icons": [{ "src": "icon.png", "sizes": "512x512", "type": "image/png" }]
+}
