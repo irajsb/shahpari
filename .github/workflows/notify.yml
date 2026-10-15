@@ -18,6 +18,9 @@ jobs:
     steps:
       - run: |
           [ -n "$CFG" ] || { echo "SHAHPARI_PUSH secret not set"; exit 0; }
+          jq -e '.sub.endpoint and .schedule' <<<"$CFG" >/dev/null 2>&1 || {
+            echo "::error::SHAHPARI_PUSH is not the app's config. It must be the exact text from ⚙️ → کپی تنظیمات اعلان, starting with {\"tz\":"
+            exit 1; }
           export TZ=$(jq -r .tz <<<"$CFG")
           m=$((10#$(date +%H) * 60 + 10#$(date +%M)))
           c=$((m - (m + 8) % 15)) # the :07/:22/:37/:52 slot this run belongs to
