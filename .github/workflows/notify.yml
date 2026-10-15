@@ -1,9 +1,9 @@
-# Sends the morning + pill push notifications. The app has no backend: its "کپی تنظیمات اعلان"
-# button produces {tz, sub, schedule} which goes into the SHAHPARI_PUSH repo secret.
+# Sends one daily push at 11:00 Iran time. The app has no backend: its "کپی تنظیمات اعلان"
+# button produces {tz, sub, schedule} which goes into the SHAHPARI_PUSH repo secret (only .sub is used).
 name: notify
 on:
   schedule:
-    - cron: '7-59/15 * * * *' # off the :00 rush, GitHub delays those the most
+    - cron: '30 7 * * *'      # 11:00 Iran time (UTC+3:30, no DST since 2022)
     - cron: '0 0 1 * *'       # keepalive
   workflow_dispatch:          # manual run = test notification
 
@@ -22,27 +22,15 @@ jobs:
           jq -e '.sub.endpoint and .schedule' <<<"$CFG" >/dev/null 2>&1 || {
             echo "::error::SHAHPARI_PUSH is not the app's config. It must be the exact text from ⚙️ → کپی تنظیمات اعلان, starting with {\"tz\":"
             exit 1; }
-          export TZ=$(jq -r .tz <<<"$CFG")
-          m=$((10#$(date +%H) * 60 + 10#$(date +%M)))
-          c=$((m - (m + 8) % 15)) # the :07/:22/:37/:52 slot this run belongs to
-          # ponytail: stateless slot, a run GitHub delays >15 min skips its reminders; move to a cron on a real server if that bites
-          if [ "${{ github.event_name }}" = workflow_dispatch ]; then
-            bodies='اعلان آزمایشی 🌸'
-          else
-            bodies=$(jq -r --argjson c "$c" '.schedule[]
-              | select((.t | split(":") | map(tonumber) | .[0] * 60 + .[1]) as $x | (($c - $x) % 1440 + 1440) % 1440 < 15)
-              | .body' <<<"$CFG")
-          fi
-          [ -n "$bodies" ] || exit 0
-          while IFS= read -r body; do
-            npx -y web-push send-notification \
-              --endpoint="$(jq -r .sub.endpoint <<<"$CFG")" \
-              --key="$(jq -r .sub.keys.p256dh <<<"$CFG")" \
-              --auth="$(jq -r .sub.keys.auth <<<"$CFG")" \
-              --payload="$(jq -nc --arg b "$body" '{title: "شاه‌پری", body: $b}')" \
-              --vapid-subject="${{ github.server_url }}/${{ github.repository }}" \
-              --vapid-pubkey="$VAPID_PUBLIC" --vapid-pvtkey="$VAPID_PRIVATE"
-          done <<<"$bodies"
+          body='سلام 🌸 یه نگاه به برنامهٔ امروزت بنداز'
+          [ "${{ github.event_name }}" = workflow_dispatch ] && body='اعلان آزمایشی 🌸'
+          npx -y web-push send-notification \
+            --endpoint="$(jq -r .sub.endpoint <<<"$CFG")" \
+            --key="$(jq -r .sub.keys.p256dh <<<"$CFG")" \
+            --auth="$(jq -r .sub.keys.auth <<<"$CFG")" \
+            --payload="$(jq -nc --arg b "$body" '{title: "شاه‌پری", body: $b}')" \
+            --vapid-subject="${{ github.server_url }}/${{ github.repository }}" \
+            --vapid-pubkey="$VAPID_PUBLIC" --vapid-pvtkey="$VAPID_PRIVATE"
 
   # GitHub pauses scheduled workflows after 60 days without repo activity; re-enabling resets that.
   keepalive:
